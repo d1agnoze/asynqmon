@@ -112,6 +112,12 @@ func muxRouter(opts Options, rc redis.UniversalClient, inspector *asynq.Inspecto
 		resultFmt = opts.ResultFormatter
 	}
 
+	var noFmtPayload = PayloadFormatterFunc(
+		func(taskType string, payload []byte) string {
+			return DefaultPayloadFormatter.FormatPayload(taskType, payload)
+		},
+	)
+
 	api := router.PathPrefix("/api").Subrouter()
 
 	// Queue endpoints.
@@ -184,7 +190,7 @@ func muxRouter(opts Options, rc redis.UniversalClient, inspector *asynq.Inspecto
 	api.HandleFunc("/queues/{qname}/groups/{gname}/aggregating_tasks:archive_all", newArchiveAllAggregatingTasksHandlerFunc(inspector)).Methods("POST")
 	api.HandleFunc("/queues/{qname}/groups/{gname}/aggregating_tasks:batch_archive", newBatchArchiveTasksHandlerFunc(inspector)).Methods("POST")
 
-	api.HandleFunc("/queues/{qname}/tasks/{task_id}", newGetTaskHandlerFunc(inspector, payloadFmt, resultFmt)).Methods("GET")
+	api.HandleFunc("/queues/{qname}/tasks/{task_id}", newGetTaskHandlerFunc(inspector, noFmtPayload, resultFmt)).Methods("GET")
 
 	// Groups endponts
 	api.HandleFunc("/queues/{qname}/groups", newListGroupsHandlerFunc(inspector)).Methods("GET")
